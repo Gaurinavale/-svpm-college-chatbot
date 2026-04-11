@@ -300,7 +300,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # Quick question buttons
 st.markdown("**💡 Quick Questions:**")
-col1, col2, col3, col4 = st.columns(4)
 
 quick_questions = {
     "👨‍💼 Principal": "Who is the principal?",
@@ -332,6 +331,40 @@ for message in st.session_state.messages:
     else:
         st.markdown(f'<div class="chat-message-bot">🎓 {message["content"]}</div>', unsafe_allow_html=True)
 
+# System prompt (reusable)
+system_prompt = f"""You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
+Answer questions based ONLY on the college information provided below.
+Give clear, helpful and complete answers.
+If the answer is not in the information, say: "For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
+
+COLLEGE INFORMATION:
+{faq_text}"""
+
+# Helper function to call Groq with fallback
+def get_response(prompt):
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content, None
+    except groq_module.RateLimitError:
+        try:
+            st.info("ℹ️ Running on backup model due to high usage.")
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content, None
+        except groq_module.RateLimitError:
+            return None, "rate_limit"
+
 # Handle quick question
 if st.session_state.quick_q:
     prompt = st.session_state.quick_q
@@ -339,98 +372,28 @@ if st.session_state.quick_q:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.markdown(f'<div class="chat-message-user">👤 {prompt}</div>', unsafe_allow_html=True)
 
-with st.spinner("🎓 Thinking..."):
-        try:
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"""You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
-Answer questions based ONLY on the college information provided below.
-Give clear, helpful and complete answers.
-If the answer is not in the information, say: "For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
-
-COLLEGE INFORMATION:
-{faq_text}"""
-                    },
-                    {"role": "user", "content": prompt}
-                ]
-            )
-        except groq_module.RateLimitError:
-            try:
-                st.info("ℹ️ Running on backup model due to high usage.")
-                response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": f"""You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
-Answer questions based ONLY on the college information provided below.
-Give clear, helpful and complete answers.
-If the answer is not in the information, say: "For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
-
-COLLEGE INFORMATION:
-{faq_text}"""
-                        },
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-            except groq_module.RateLimitError:
-                st.warning("⚠️ Our chatbot is experiencing high traffic right now. Please try again in 30 minutes!")
-                st.stop()
-        reply = response.choices[0].message.content
-    st.markdown(f'<div class="chat-message-bot">🎓 {reply}</div>', unsafe_allow_html=True)
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    with st.spinner("🎓 Thinking..."):
+        reply, error = get_response(prompt)
+    if error == "rate_limit":
+        st.warning("⚠️ Our chatbot is experiencing high traffic right now. Please try again in 30 minutes!")
+        st.stop()
+    else:
+        st.markdown(f'<div class="chat-message-bot">🎓 {reply}</div>', unsafe_allow_html=True)
+        st.session_state.messages.append({"role": "assistant", "content": reply})
 
 # Chat input
 if prompt := st.chat_input("Ask anything about SVPM College..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.markdown(f'<div class="chat-message-user">👤 {prompt}</div>', unsafe_allow_html=True)
 
-  with st.spinner("🎓 Thinking..."):
-        try:
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"""You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
-Answer questions based ONLY on the college information provided below.
-Give clear, helpful and complete answers.
-If the answer is not in the information, say: "For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
-
-COLLEGE INFORMATION:
-{faq_text}"""
-                    },
-                    {"role": "user", "content": prompt}
-                ]
-            )
-        except groq_module.RateLimitError:
-            try:
-                st.info("ℹ️ Running on backup model due to high usage.")
-                response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": f"""You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
-Answer questions based ONLY on the college information provided below.
-Give clear, helpful and complete answers.
-If the answer is not in the information, say: "For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
-
-COLLEGE INFORMATION:
-{faq_text}"""
-                        },
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-            except groq_module.RateLimitError:
-                st.warning("⚠️ Our chatbot is experiencing high traffic right now. Please try again in 30 minutes!")
-                st.stop()
-        reply = response.choices[0].message.content
-    st.markdown(f'<div class="chat-message-bot">🎓 {reply}</div>', unsafe_allow_html=True)
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    with st.spinner("🎓 Thinking..."):
+        reply, error = get_response(prompt)
+    if error == "rate_limit":
+        st.warning("⚠️ Our chatbot is experiencing high traffic right now. Please try again in 30 minutes!")
+        st.stop()
+    else:
+        st.markdown(f'<div class="chat-message-bot">🎓 {reply}</div>', unsafe_allow_html=True)
+        st.session_state.messages.append({"role": "assistant", "content": reply})
 
 # Footer
 st.markdown("<br>", unsafe_allow_html=True)
