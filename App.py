@@ -402,10 +402,10 @@ def get_response(prompt):
         return None, "rate_limit"
 
     except Exception as e:
-        return None, str(e)
+        return None, f"{type(e).__name__}: {str(e)}"
 
 
-# Handle quick question
+# Handle a quick-question button click
 if st.session_state.quick_q:
     prompt = st.session_state.quick_q
     st.session_state.quick_q = None
@@ -431,7 +431,7 @@ if st.session_state.quick_q:
             "Please try again later."
         )
     elif error:
-        st.error("⚠️ Unable to get a response from the AI service. Please try again later.")
+        st.error(f"⚠️ AI Error: {error}")
     else:
         st.markdown(
             f'<div class="chat-message-bot">🎓 {reply}</div>',
