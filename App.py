@@ -1,3 +1,4 @@
+```python
 import streamlit as st
 from groq import Groq
 import groq as groq_module
@@ -26,11 +27,13 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
+
     .main-header h1 {
         color: white;
         font-size: 2rem;
         margin: 0;
     }
+
     .main-header p {
         color: #a0c4ff;
         margin: 5px 0 0 0;
@@ -59,6 +62,7 @@ st.markdown("""
         margin-left: auto;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
+
     .chat-message-bot {
         background: rgba(255,255,255,0.08);
         color: white;
@@ -81,6 +85,7 @@ st.markdown("""
         transition: all 0.3s;
         width: 100%;
     }
+
     .stButton > button:hover {
         background: rgba(83, 52, 131, 0.5);
         border-color: #533483;
@@ -96,10 +101,16 @@ st.markdown("""
     }
 
     /* Hide streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    #MainMenu {
+        visibility: hidden;
+    }
+
+    footer {
+        visibility: hidden;
+    }
 </style>
 """, unsafe_allow_html=True)
+
 
 # College FAQ - Complete Information
 faq_text = """
@@ -279,6 +290,7 @@ SPPU Website: http://unipune.ac.in
 DTE Website: http://www.dte.org.in
 """
 
+
 # Header
 st.markdown("""
 <div class="main-header">
@@ -287,16 +299,31 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+
 # College quick info cards
 col1, col2, col3 = st.columns(3)
+
 with col1:
-    st.markdown('<div class="info-card">📞 (02112) 254424</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="info-card">📞 (02112) 254424</div>',
+        unsafe_allow_html=True
+    )
+
 with col2:
-    st.markdown('<div class="info-card">📧 office@engg.svpm.org.in</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="info-card">📧 office@engg.svpm.org.in</div>',
+        unsafe_allow_html=True
+    )
+
 with col3:
-    st.markdown('<div class="info-card">🏛️ Est. 1990 | Code: 6275</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="info-card">🏛️ Est. 1990 | Code: 6275</div>',
+        unsafe_allow_html=True
+    )
+
 
 st.markdown("<br>", unsafe_allow_html=True)
+
 
 # Quick question buttons
 st.markdown("**💡 Quick Questions:**")
@@ -308,97 +335,212 @@ quick_questions = {
     "🎓 Admission": "How to take admission?",
 }
 
+
 if "quick_q" not in st.session_state:
     st.session_state.quick_q = None
 
+
 cols = st.columns(4)
+
 for i, (label, question) in enumerate(quick_questions.items()):
     with cols[i]:
         if st.button(label):
             st.session_state.quick_q = question
 
+
 # Groq client
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+
 
 # Chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+
 # Show chat history
 for message in st.session_state.messages:
     if message["role"] == "user":
-        st.markdown(f'<div class="chat-message-user">👤 {message["content"]}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="chat-message-user">👤 {message["content"]}</div>',
+            unsafe_allow_html=True
+        )
     else:
-        st.markdown(f'<div class="chat-message-bot">🎓 {message["content"]}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="chat-message-bot">🎓 {message["content"]}</div>',
+            unsafe_allow_html=True
+        )
 
-# System prompt (reusable)
-system_prompt = f"""You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
+
+# System prompt
+system_prompt = f"""
+You are a friendly and helpful chatbot for SVPM's College of Engineering, Malegaon (Bk), Baramati.
+
 Answer questions based ONLY on the college information provided below.
+
 Give clear, helpful and complete answers.
-If the answer is not in the information, say: "For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
+
+If the answer is not in the information, say:
+"For more details please contact office@engg.svpm.org.in or call (02112) 254424 or visit https://engg.svpm.org.in"
 
 COLLEGE INFORMATION:
-{faq_text}"""
 
-# Helper function to call Groq with fallback
+{faq_text}
+"""
+
+
+# Helper function to call Groq
 def get_response(prompt):
+
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ]
         )
+
         return response.choices[0].message.content, None
+
     except groq_module.RateLimitError:
+
         try:
             st.info("ℹ️ Running on backup model due to high usage.")
+
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
                 ]
             )
+
             return response.choices[0].message.content, None
+
         except groq_module.RateLimitError:
             return None, "rate_limit"
 
+
 # Handle quick question
 if st.session_state.quick_q:
+
     prompt = st.session_state.quick_q
+
     st.session_state.quick_q = None
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.markdown(f'<div class="chat-message-user">👤 {prompt}</div>', unsafe_allow_html=True)
+
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": prompt
+        }
+    )
+
+    st.markdown(
+        f'<div class="chat-message-user">👤 {prompt}</div>',
+        unsafe_allow_html=True
+    )
 
     with st.spinner("🎓 Thinking..."):
         reply, error = get_response(prompt)
+
     if error == "rate_limit":
-        st.warning("⚠️ Our chatbot is experiencing high traffic right now. Please try again in 30 minutes!")
+
+        st.warning(
+            "⚠️ Our chatbot is experiencing high traffic right now. "
+            "Please try again in 30 minutes!"
+        )
+
         st.stop()
+
     else:
-        st.markdown(f'<div class="chat-message-bot">🎓 {reply}</div>', unsafe_allow_html=True)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+
+        st.markdown(
+            f'<div class="chat-message-bot">🎓 {reply}</div>',
+            unsafe_allow_html=True
+        )
+
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": reply
+            }
+        )
+
 
 # Chat input
 if prompt := st.chat_input("Ask anything about SVPM College..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.markdown(f'<div class="chat-message-user">👤 {prompt}</div>', unsafe_allow_html=True)
+
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": prompt
+        }
+    )
+
+    st.markdown(
+        f'<div class="chat-message-user">👤 {prompt}</div>',
+        unsafe_allow_html=True
+    )
 
     with st.spinner("🎓 Thinking..."):
         reply, error = get_response(prompt)
+
     if error == "rate_limit":
-        st.warning("⚠️ Our chatbot is experiencing high traffic right now. Please try again in 30 minutes!")
+
+        st.warning(
+            "⚠️ Our chatbot is experiencing high traffic right now. "
+            "Please try again in 30 minutes!"
+        )
+
         st.stop()
+
     else:
-        st.markdown(f'<div class="chat-message-bot">🎓 {reply}</div>', unsafe_allow_html=True)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+
+        st.markdown(
+            f'<div class="chat-message-bot">🎓 {reply}</div>',
+            unsafe_allow_html=True
+        )
+
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": reply
+            }
+        )
+
 
 # Footer
 st.markdown("<br>", unsafe_allow_html=True)
+
 st.markdown("""
 <div style="text-align:center; color: rgba(255,255,255,0.4); font-size: 0.75rem;">
     🎓 SVPM's College of Engineering | Malegaon (Bk), Baramati, Pune | Est. 1990
 </div>
 """, unsafe_allow_html=True)
+```
+
+### What you need to do
+
+Replace the contents of your current **`App.py`** with the code above, then:
+
+**GitHub → `App.py` → Commit changes → Streamlit automatically redeploys.**
+
+Your original application already had `llama-3.1-8b-instant` as the backup model; we're simply making that the primary model so the unavailable `llama-3.3-70b-versatile` doesn't cause the 404 error.
+
+After deployment, test:
+
+> **Who is the principal?**
+
+It should return the principal information from your FAQ.
