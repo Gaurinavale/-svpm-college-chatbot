@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 from groq import Groq
 import groq as groq_module
@@ -13,12 +12,10 @@ st.set_page_config(
 # Custom CSS for beautiful UI
 st.markdown("""
 <style>
-    /* Background */
     .stApp {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     }
 
-    /* Header */
     .main-header {
         background: linear-gradient(90deg, #0f3460, #533483);
         padding: 20px;
@@ -40,7 +37,6 @@ st.markdown("""
         font-size: 1rem;
     }
 
-    /* Info cards */
     .info-card {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.1);
@@ -51,7 +47,6 @@ st.markdown("""
         font-size: 0.85rem;
     }
 
-    /* Chat messages */
     .chat-message-user {
         background: linear-gradient(90deg, #0f3460, #533483);
         color: white;
@@ -74,7 +69,6 @@ st.markdown("""
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
-    /* Quick question buttons */
     .stButton > button {
         background: rgba(255,255,255,0.08);
         color: white;
@@ -92,7 +86,6 @@ st.markdown("""
         transform: translateY(-1px);
     }
 
-    /* Input box */
     .stChatInput input {
         background: rgba(255,255,255,0.08) !important;
         color: white !important;
@@ -100,7 +93,6 @@ st.markdown("""
         border-radius: 25px !important;
     }
 
-    /* Hide streamlit branding */
     #MainMenu {
         visibility: hidden;
     }
@@ -321,7 +313,6 @@ with col3:
         unsafe_allow_html=True
     )
 
-
 st.markdown("<br>", unsafe_allow_html=True)
 
 
@@ -390,7 +381,6 @@ COLLEGE INFORMATION:
 
 # Helper function to call Groq
 def get_response(prompt):
-
     try:
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -409,35 +399,15 @@ def get_response(prompt):
         return response.choices[0].message.content, None
 
     except groq_module.RateLimitError:
+        return None, "rate_limit"
 
-        try:
-            st.info("ℹ️ Running on backup model due to high usage.")
-
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": system_prompt
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
-
-            return response.choices[0].message.content, None
-
-        except groq_module.RateLimitError:
-            return None, "rate_limit"
+    except Exception as e:
+        return None, str(e)
 
 
 # Handle quick question
 if st.session_state.quick_q:
-
     prompt = st.session_state.quick_q
-
     st.session_state.quick_q = None
 
     st.session_state.messages.append(
@@ -456,16 +426,13 @@ if st.session_state.quick_q:
         reply, error = get_response(prompt)
 
     if error == "rate_limit":
-
         st.warning(
             "⚠️ Our chatbot is experiencing high traffic right now. "
-            "Please try again in 30 minutes!"
+            "Please try again later."
         )
-
-        st.stop()
-
+    elif error:
+        st.error("⚠️ Unable to get a response from the AI service. Please try again later.")
     else:
-
         st.markdown(
             f'<div class="chat-message-bot">🎓 {reply}</div>',
             unsafe_allow_html=True
@@ -481,7 +448,6 @@ if st.session_state.quick_q:
 
 # Chat input
 if prompt := st.chat_input("Ask anything about SVPM College..."):
-
     st.session_state.messages.append(
         {
             "role": "user",
@@ -498,16 +464,13 @@ if prompt := st.chat_input("Ask anything about SVPM College..."):
         reply, error = get_response(prompt)
 
     if error == "rate_limit":
-
         st.warning(
             "⚠️ Our chatbot is experiencing high traffic right now. "
-            "Please try again in 30 minutes!"
+            "Please try again later."
         )
-
-        st.stop()
-
+    elif error:
+        st.error("⚠️ Unable to get a response from the AI service. Please try again later.")
     else:
-
         st.markdown(
             f'<div class="chat-message-bot">🎓 {reply}</div>',
             unsafe_allow_html=True
@@ -529,18 +492,3 @@ st.markdown("""
     🎓 SVPM's College of Engineering | Malegaon (Bk), Baramati, Pune | Est. 1990
 </div>
 """, unsafe_allow_html=True)
-```
-
-### What you need to do
-
-Replace the contents of your current **`App.py`** with the code above, then:
-
-**GitHub → `App.py` → Commit changes → Streamlit automatically redeploys.**
-
-Your original application already had `llama-3.1-8b-instant` as the backup model; we're simply making that the primary model so the unavailable `llama-3.3-70b-versatile` doesn't cause the 404 error.
-
-After deployment, test:
-
-> **Who is the principal?**
-
-It should return the principal information from your FAQ.
